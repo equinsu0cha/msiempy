@@ -1,0 +1,8 @@
+pylint
+pdoc3
+Graphviz
+twine
+codecov
+pytest
+pytest-rerunfailures
+pytest-cov

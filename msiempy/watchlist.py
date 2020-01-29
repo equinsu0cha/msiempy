@@ -1,95 +1,187 @@
 # -*- coding: utf-8 -*-
-"""Watchlist module offers a whatchlist management."""
+"""Provide watchlist management."""
 
 import logging
 import collections
 log = logging.getLogger('msiempy')
-from . import Item, Manager
 
-class WatchlistManager(Manager):
+from . import NitroDict, NitroList
+
+class WatchlistManager(NitroList):
+    """
+    Summary of ESM watchlists.
+
+    Example:
+    ```
+    wlman = WatchlistManager()
+    for wl in wlman:
+        if wl['name'] == 'IPs-To-Block-On-IPS-24hrs': break
+    wl.add_values(['1.1.1.2', '2.2.2.1', '3.3.3.1'])
+    ```
+
+    """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the watchlist manager.
+        """
         super().__init__(*args, **kwargs)
-        self.data=self.nitro.request('get_watchlists_no_filters', hidden=False, dynamic=False, writeOnly=False, indexedOnly=False)
+        self.get_watchlist_summary()
+
+    def get_watchlist_summary(self):
+        """
+        Loads the watchlist summary.
+        """
+        self.data = self.nitro.request('get_watchlists_no_filters',
+            hidden=False, dynamic=False, writeOnly=False, indexedOnly=False)
 
         #Casting all data to Watchlist objects, better way to do it ?
-        collections.UserList.__init__(self, [Watchlist(adict=item) for item in self.data if isinstance(item, (dict, Item))])
+        collections.UserList.__init__(self,
+            [Watchlist(adict=item) for item in self.data
+                if isinstance(item, (dict, NitroDict))])
 
     def load_details(self):
+        """
+        Load the details of existing watchlists.
+        """
         self.perform(Watchlist.load_details, asynch=False, progress=True)
 
+    def refresh(self):
+        """
+        Reloads the watchlist summary.
+        """
+        self.get_watchlist_summary()
 
-class Watchlist(Item):
+    def add(self, name, wl_type):
+        """
+        Create a static watchlist.
+
+        Arguments:  
+
+        - `name` (`str`): Name of the watchlist.
+        - `wl_type` (`str`): Watchlist data type.
+        Get the list of types with: `msiempy.watchlist.WatchlistManager.get_wl_types`.  
+        Most common types are: `IPAddress`,
+                                `Hash`,
+                                `SHA1`,
+                                `DSIDSigID`,
+                                `Port`,
+                                `MacAddress`,
+                                `NormID`,
+                                `AppID`,
+                                `CommandID`,
+                                `DomainID`,
+                                `HostID`,
+                                `ObjectID`,
+                                `Filename`,
+                                `File_Hash`
+        """
+        for wl in self.data:
+            if wl.get('name') == name:
+                logging.error('Cannot add: {} watchlist already exists.'.format(name))
+                return
+        self.nitro.request('add_watchlist', name=name, wl_type=wl_type)
+        self.refresh()
+
+    def remove(self, wl_id_list):
+        """
+        Remove watchlist(s).  
+
+        Arguments:  
+
+        - `wl_ids` (`list`): list of watchlist IDs. Example: `[1, 2, 3]`.   
+        """
+        self.nitro.request('remove_watchlists', wl_id_list=wl_id_list)
+
+    def get_wl_types(self):
+        """
+        Get a list of watchlist types.
+        Returns: `list` of watchlist types.
+        """
+        return self.nitro.request('get_wl_types')
+
+class Watchlist(NitroDict):
     """
 
     Complete list of watchlist fields (not values) once load with load_details()
-    `
-        name: The name of the watchlist
-        type: The watchlist type
-        customType: The watchlist custom type (custom field)
-        dynamic: Whether this watchlist is dynamic
-        hidden:  Whether this watchlist is hidden
-        scored: Whether this watchlist has a scoring component (GTI for example)
-        valueCount: The number of values in this watchlist
-        active: Whether this watchlist is a active
-        errorMsg: The error message, if there is one associated with this watchlist
-        source: source
-        id: The id of the watchlist
-        search: A regular expression, if applicable to the type of data source
-        updateType: If dynamic is true, the type of update frequency (hourly, weekly, etc)
-            Accepted Values:
-            EVERY_SO_MANY_MINUTES
-            HOURLY_AT_SPECIFIED_MINUTE
-            DAILY_AT_SPECIFIED_TIME
-            WEEKLY_AT_SPECIFIED_DAYTIME
-            MONTHLY_AT_SPECIFIED_DAYTIME
-        updateDay: The day the watchlist should be updated, if applicable. This value will either be the day of the week (1-7, corresponding to Sunday to Saturday), or the day of the month depending on the update type.
-        updateMin: If dynamic is true and a minute field is applicable to the update frequency, this will hold the minute of either the hour or day depending on updateType.
-        age: The age of the watchlist values in milliseconds
-        ipsid: ipsid
-        recordCount: The number of records in the watchlist
-        valueFile: valueFile The file that can be obtained with a call to sysGetWatchlistValues containing all of the watchlist values
-        dbUrl: If an enrichment source is being set up for the watchlist, this should hold the database URL
-        mountPoint: If an enrichment source is being set up for the watchlist, this would hold the mount point if applicable. See product documentation on enrichment settings for more details.
-        path: If the watchlist is populated from an enrichment source, this will hold the enrichment path setting. See the enrichment configuration documentation for more details on this setting.
-        port: If the watchlist is populated from an enrichment source, this will hold the enrichment port setting. See the enrichment configuration documentation for more details on this setting.
-        username: If the watchlist is populated from an enrichment source, this will hold the enrichment username setting. See the enrichment configuration documentation for more details on this setting.
-        password: If the watchlist is populated from an enrichment source, this will hold the enrichment password setting. See the enrichment configuration documentation for more details on this setting.
-        query: If the watchlist is populated from an enrichment source, this will hold the enrichment query setting. See the enrichment configuration documentation for more details on this setting.
-        lookup: If the watchlist is populated from an enrichment source, this will hold the enrichment lookup setting. See the enrichment configuration documentation for more details on this setting.
-        enabled: Whether the watchlist is enabled
-        jobTrackerURL: If the watchlist is populated from an enrichment source, this will hold the enrichment Job Tracker URL setting. See the enrichment configuration documentation for more details on this setting.
-        jobTrackerPort: If the watchlist is populated from an enrichment source, this will hold the enrichment Job Tracker Port setting. See the enrichment configuration documentation for more details on this setting.
-        postArgs: If the watchlist is populated from an enrichment source, this will hold the enrichment Post Argument setting. See the enrichment configuration documentation for more details on this setting.
-        sSLCheck: If the watchlist is populated from an enrichment source, this will hold the enrichment SSL Check setting. See the enrichment configuration documentation for more details on this setting.
-        ignoreRegex: If the watchlist is populated from an enrichment source, this will hold the enrichment Ignore RegEx setting. See the enrichment configuration documentation for more details on this setting.
-        method: If the watchlist is populated from an enrichment source, this will hold the enrichment method setting. See the enrichment configuration documentation for more details on this setting.
-        matchRegex: If the watchlist is populated from an enrichment source, this will hold the enrichment match regex setting. See the enrichment configuration documentation for more details on this setting.
-        lineSkip: If the watchlist is populated from an enrichment source, this will hold the enrichment line skip setting. See the enrichment configuration documentation for more details on this setting.
-        delimitRegex: If the watchlist is populated from an enrichment source, this will hold the enrichment delimit regex setting. See the enrichment configuration documentation for more details on this setting.
-        groups: If the watchlist is populated from an enrichment source, this will hold the enrichment groups setting. See the enrichment configuration documentation for more details on this setting.
-        values: values
-    `
-    """
 
+    Dictionary keys:
+
+    - `name`: The name of the watchlist
+    - `type`: The watchlist type
+    - `customType`: The watchlist custom type (custom field)
+    - `dynamic`: Whether this watchlist is dynamic
+    - `hidden`:  Whether this watchlist is hidden
+    - `scored`: Whether this watchlist has a scoring component (GTI for example)
+    - `valueCount`: The number of values in this watchlist
+    - `active`: Whether this watchlist is a active
+    - `errorMsg`: The error message, if there is one associated with this watchlist
+    - `source`: source
+    - `id`: The id of the watchlist
+    - `values`: values
+    - And others...
+
+    Arguments:
+
+    - `adict`: Watchlist parameters
+    - `id`: The watchlist ID to instanciate. Will load informations
+    
+
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    # this should not be necessary neitehr
+    # def __repr__(self):
+    #     return self.data.__repr__()
+    
+    # This should not be necessary
+    # def __iter__(self):
+    #     for data in self.data:
+    #         yield data
+
     def add_values(self, values):
+        """
+        Add values to static watchlist.
+
+        Arguments:  
+
+        - `values` (`list`): list of values
+        """
         self.nitro.request('add_watchlist_values', watchlist=self['id'], values=values)
 
     def data_from_id(self, id):
+        """
+        Retrieve watchlist details for ID.
+        
+        Arguments:  
+
+        - `id` (`str`): watchlist ID
+        """
         info=self.nitro.request('get_watchlist_details', id=id)
         return info
 
     def load_details(self):
-        the_id = self.data['id']
-        self.data.update(self.data_from_id(the_id))
-        self.data['id']=the_id
-
-    def load_values(self, count=50):
         """
-        Doesn't work yet
+        Load Watchlist details.
         """
-        self.data['values']=self.nitro.request('get_watchlist_values', id=self.data['id'], pos=0, count=count)
+        self.data.update(self.data_from_id(self.data['id']))
 
+    def refresh(self):
+        """Load Watchlist details."""
+        self.load_details()
+
+    def load_values(self):
+        """
+        Load Watchlist values.  
+        Raises: `KeyError` if watchlist invalid.
+        """
+        wl_details = self.nitro.request('get_watchlist_values', id=self.data['id'])
+
+        try:
+            file = wl_details['WLVFILE']
+        except KeyError:
+            log.error('Is watchlist valid? ({})'.format(str(self)))
+            raise
+        data = self.nitro.get_internal_file(file)
+        self.data['values'] = ''.join(data).split('\n')

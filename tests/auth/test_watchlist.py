@@ -9,7 +9,7 @@ class T(unittest.TestCase):
         watchlist_manager = msiempy.watchlist.WatchlistManager()
         print(watchlist_manager)
 
-        watchlist_manager=msiempy.watchlist.WatchlistManager(alist=watchlist_manager[:5])
+        #watchlist_manager=msiempy.watchlist.WatchlistManager(alist=watchlist_manager[:5])
         watchlist_manager.load_details()
         print(watchlist_manager)
 
@@ -17,7 +17,6 @@ class T(unittest.TestCase):
         print(watchlist)
 
         watchlist.load_values()
-        print(watchlist)
 
     def test_add_value(self):
         watchlist_manager = msiempy.watchlist.WatchlistManager()

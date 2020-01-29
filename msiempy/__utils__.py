@@ -14,8 +14,7 @@ import dateutil.parser
 def dehexify(data):
     """
     A URL and Hexadecimal Decoding Library.
-
-    Credit: Larry Dewey
+    Credit: Larry Dewey. In the case of the SIEM API, this is used only when dealing with the pricate API calls.
     """
 
     hexen = {
@@ -59,30 +58,39 @@ def dehexify(data):
 
     return data
 
-
-def timethis(func):
-    """
-    Decorator that reports the execution time.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        """Wrapper"""
-        start = time.time()
-        result = func(*args, **kwargs)
-        end = time.time()
-        print(func.__name__, end-start)
-        return result
-    return wrapper
+# Unused method
+# def timethis(func):
+#     """
+#     Decorator that reports the execution time.
+#     """
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         """Wrapper"""
+#         start = time.time()
+#         result = func(*args, **kwargs)
+#         end = time.time()
+#         print(func.__name__, end-start)
+#         return result
+#     return wrapper
 
 def tob64(s):
+    """
+    Encode a string to base64 almost like `echo '123' | base64` would do.
+    """
     if type(s) is str:
         return base64.b64encode(s.encode('utf-8')).decode()
 
 def fromb64(s):
+    """
+    Decode a string to base64 almost like `echo 'MTIzCg==' | base64 --decode` would do.
+    """
     if type(s) is str:
         return base64.b64decode(s.encode('utf-8')).encode()
 
 def timerange_gettimes(time_range):
+    """
+    Convert a string time range to a tuple of datetime objects. Only works for certain time ranges.
+    """
     t=time_range.upper()
     now=datetime.now()
     times=tuple()
@@ -138,9 +146,9 @@ def timerange_gettimes(time_range):
     elif t is 'PREVIOUS_YEAR':
         pass"""
 
-def divide_times(first, last, time=0, slots=0, delta=0, min_slots=0):
+def divide_times(first, last, time=0, slots=0, delta=0):
     """"
-        Divide the time range based on another time, a delta or on a number of slots
+        Divide the time range based on another time, a delta or on a number of slots.
         Return list of tuple
     """
 
@@ -165,9 +173,8 @@ def divide_times(first, last, time=0, slots=0, delta=0, min_slots=0):
             raise AttributeError('delta Must be timedelta or str object')
 
         
-        slots=int(duration.total_seconds()/div.total_seconds())
+        slots=int(duration.total_seconds()/div.total_seconds())+1
 
-    slots+=min_slots
     timeSlot=timedelta(seconds=duration.total_seconds()/slots)
 
     #print(locals())
@@ -254,9 +261,6 @@ def format_fields_for_query(fields):
     """
     return([{'name':value} for value in list(fields)])
 
-
-
-
 def parse_timedelta(time_str):
     """
     Parse a time string e.g. (2h13m) into a timedelta object.
@@ -271,3 +275,31 @@ def parse_timedelta(time_str):
     assert parts is not None, "Could not parse any time information from '{}'.  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(time_str)
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
     return timedelta(**time_params)
+
+# Unused method
+# def sanitize_string(strg, valid_chars = ''):
+#     ''' Sanitize string 
+#         Usage:
+#             By default returns the string without special characters, underscore replaced with space, and surrounding whitespace removed
+#             :valid_chars: By default this function removes all characters. Specifying a string of characters here will skip removing them
+
+#         Edited from https://github.com/AutomationSolutionz/Zeuz_Python_Node/blob/master/Framework/Built_In_Automation/Built_In_Utility/CrossPlatform/BuiltInUtilityFunction.py
+#     '''
+    
+#     # Invalid character list (space and underscore are handle separately)
+#     invalid_chars = '!"#$%&\'()*+,-./:;<=>?@[\]^`{|}~'
+
+#     # Adjust invalid character list, based on function input
+#     for j in range(len(valid_chars)): # For each valid character
+#         invalid_chars = invalid_chars.replace(valid_chars[j], '') # Remove valid character from invalid character list
+   
+#     for j in range(0,len(invalid_chars)): # For each invalid character (allows us to only remove those the user hasn't deemed valid)
+#         strg = strg.replace(invalid_chars[j], '') # Remove invalid character
+#         strg = strg.lower() # Convert to lower case
+#     if '_' not in valid_chars: strg = strg.replace('_', ' ') # Underscore to space (unless user wants to keep it)
+
+#     strg = strg.replace('  ', ' ') # Double space to single space
+#     strg = strg.strip() # Remove leading and trailing whitespace
+
+    
+#     return strg

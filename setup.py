@@ -3,8 +3,13 @@
 from setuptools import setup
 import pathlib
 
+
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
+
+#Version of the project
+version = {}
+exec((HERE / "msiempy" / "__version__.py").read_text(), version)
 
 # The text of the README file
 README = (HERE / "README.md").read_text()
@@ -15,16 +20,13 @@ setup(
     url='https://github.com/mfesiem/msiempy',
     maintainer='andywalden, tristanlatr, mathieubeland',
     maintainer_email='aw@krakencodes.com, tris.la.tr@gmail.com',
-    version='0.1.0',
+    version=version['__version__'],
     packages=['msiempy',],
     entry_points = {
         'console_scripts': ['msiempy=msiempy.cli:main'],
     },
     install_requires=[
           'requests','tqdm','PTable','python-dateutil', 'urllib3'
-    ],
-    tests_require=[
-          'pylint','pytest','pdoc3'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
